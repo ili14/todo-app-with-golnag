@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"strconv"
 )
 
 type User struct {
@@ -15,16 +16,25 @@ type User struct {
 }
 
 type Task struct {
-	ID       uint
-	Name     string
-	DueDate  string
-	Category string
-	IsDone   bool
-	UserID   uint // Assuming tasks are associated with a user
+	ID         uint
+	Name       string
+	DueDate    string
+	CategoryID uint
+	IsDone     bool
+	UserID     uint // Assuming tasks are associated with a user
+}
+
+type Categoty struct {
+	ID     int
+	Title  string
+	Color  string
+	UserID uint
 }
 
 var userStorage []User
 var taskStorage []Task
+
+var categoryStorage []Categoty
 
 var authenticatedUser *User
 
@@ -91,13 +101,35 @@ func createTask() {
 	scanner.Scan()
 	category = scanner.Text()
 
+	categoryId, error := strconv.Atoi(category)
+	if error != nil {
+		fmt.Println("category-id isn't valid integer, %v\n", error)
+
+		return
+	}
+
+	var isFound bool = false
+	for _, c := range categoryStorage {
+		if c.ID == categoryId && c.UserID == authenticatedUser.ID {
+			isFound = true
+			fmt.Print("break")
+			break
+		}
+	}
+
+	if !isFound {
+		fmt.Printf("category-id is not valid \n")
+
+		return
+	}
+
 	task := Task{
-		ID:       uint(len(taskStorage) + 1),
-		Name:     name,
-		DueDate:  duedate,
-		Category: category,
-		IsDone:   false,
-		UserID:   authenticatedUser.ID, // Associate task with the authenticated user
+		ID:         uint(len(taskStorage) + 1),
+		Name:       name,
+		DueDate:    duedate,
+		CategoryID: uint(categoryId),
+		IsDone:     false,
+		UserID:     authenticatedUser.ID, // Associate task with the authenticated user
 	}
 
 	taskStorage = append(taskStorage, task)
@@ -120,6 +152,15 @@ func createCategory() {
 	color = scanner.Text()
 
 	fmt.Println("category information => ", title, " ", color)
+
+	c := Categoty{
+		ID:     int(len(categoryStorage)),
+		Title:  title,
+		Color:  color,
+		UserID: authenticatedUser.ID,
+	}
+
+	categoryStorage = append(categoryStorage, c)
 
 }
 
@@ -196,8 +237,8 @@ func listTasks() {
 	for _, task := range taskStorage {
 		if task.UserID == authenticatedUser.ID {
 			foundCount++
-			output := fmt.Sprintf("Name: %s, Due Date: %s, Category: %s, Is Done: %t\n",
-				task.Name, task.DueDate, task.Category, task.IsDone)
+			output := fmt.Sprintf("Name: %s, Due Date: %s, Category: %f, Is Done: %t\n",
+				task.Name, task.DueDate, task.CategoryID, task.IsDone)
 			fmt.Println(output)
 		}
 	}
